@@ -235,7 +235,7 @@ while True:
         print(f"\n{dias} días equivalen a {minutos} minutos")
 
 
-    # Minutos → días, horas y minutos
+    # mintuos a días, horas y minutos restantes
     elif opcion == "4":
 
         minutos = int(input("\nIngresa la cantidad total de minutos: "))
@@ -323,5 +323,5 @@ print(f"USD: ${usd}")
 print(f"EUR: €{eur}")
 ```
 
-> ![imagen1_5](ss/capex5.png)
+> ![imagen1_5](ss/capex5    .png)
 
