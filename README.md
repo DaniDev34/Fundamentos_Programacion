@@ -1,243 +1,374 @@
-# Actividad 2 Evaluable  — Cobro de Entradas del Museo con Restricciones de Control
+# Avance de Proyecto — Sistema de Cotización de Internet Empresarial IENTC
+
+Dentro de esta rama se detalla el avance del proyecto (Fase I) para la **Actividad 3** del curso *Solución de problemas con programación computacional*.
 
 ---
 
 ## Introducción
 
-En esta actividad se desarrolla un programa en **Python** para cobrar las entradas de los visitantes del **Museo de Antropología e Historia**. El sistema calcula el precio adecuado para cada visitante aplicando descuentos por tipo de visitante bajo condiciones lógicas estrictas.
+Esta documentación describe el diseño y análisis de un sistema de **cotización de planes de internet empresarial** para la empresa de telecomunicaciones **IENTC**.
 
-Este reto integra las estructuras de decisión `if/elif/else` y operadores lógicos (Tema 5), el ciclo `while` con `break` y `continue` (Tema 6), la depuración con PDB (Tema 7) y el ciclo `for` con acumuladores (Tema 8).
+En este avance se realiza el análisis de la problemática identificada en el área comercial de la organización, se delimitan las reglas de negocio que rigen la cotización de los servicios, se clasifican los datos que intervienen en la solución, se identifican los operadores y estructuras de control necesarios, y se desarrolla un prototipo funcional en Python que ejecuta el proceso de cotización en consola. El objetivo es definir de manera clara cómo debe funcionar el sistema antes de llegar a las etapas posteriores del proyecto, asegurando que se cumplan los requerimientos planteados y facilitando su comprensión.
 
-**Precios base de entrada:**
+## Análisis organizacional
 
-| Tipo de visitante | Precio |
-| :--- | :---: |
-| Niños menores de 3 años | Gratis ($0) |
-| Menores de edad (3 a 17 años) | $30 |
-| Mayores de 18 años | $45 |
+**IENTC Telecomunicaciones** (Ientc S. de R.L. de C.V.) es una empresa mexicana de telecomunicaciones fundada en 2011, autorizada como Red Pública de Telecomunicaciones por el IFT. Cuenta con aproximadamente **300 colaboradores** y una infraestructura de más de **25,000 kilómetros de fibra óptica** a nivel nacional, con interconexiones internacionales en Europa y Asia, así como seis centros de datos distribuidos en el país.
 
-**Tabla de descuentos:**
+Su oferta de servicios se enfoca principalmente en el mercado empresarial: **internet de alta velocidad por fibra óptica**, telefonía fija, conectividad corporativa, servicios *carrier* y soluciones en la nube. La empresa diseña paquetes personalizados para cada cliente y garantiza un nivel de disponibilidad del 99.9%.
 
-| Tipo de visitante | Descuento |
-| :--- | :---: |
-| Adulto mayor | 12% |
-| Profesor | 10% |
-| Estudiante | 10% |
+El área de impacto seleccionada es el **área comercial y de ventas**, que atiende a clientes corporativos que solicitan cotizaciones de planes de internet. Las cotizaciones actualmente se elaboran de forma manual, lo que provoca errores en la aplicación de descuentos, en el cálculo de la instalación y del IVA, así como demoras en la atención al cliente.
 
----
+## Definición del problema
 
-## Definiciones
+Le empresa necesita agilizar la elaboración de cotizaciones y reducir errores de cálculo al ofrecer sus planes de internet empresarial. El problema técnico a resolver es la **ausencia de una herramienta que estandarice el proceso de cotización**: el precio mensual, el costo de instalación, los descuentos por tipo de cliente y por plazo de contrato, y el IVA se calculan de forma manual dentro del área comercial.
 
-Se definieron constantes para los precios base según la categoría de edad y los porcentajes de descuento aplicables.
-```python
-sin_pago = 0       # Menores de 3 años
-precio_menor = 30  # De 3 a 17 años
-precio_adulto = 45 # Mayores de 18 años
+La solución propuesta es un **sistema de cotización en consola** que reciba el plan elegido por el cliente, el plazo del contrato y su condición de cliente nuevo, y que entregue por pantalla un desglose detallado del primer pago y de la mensualidad, acumulando además las cotizaciones realizadas durante la sesión para apoyar la proyección de ventas del área.
 
-# Porcentajes de descuento
-descuento_adulto_mayor = 0.12
-descuento_profesor = 0.10
-descuento_estudiante = 0.10
-```
+## Reglas de negocio
 
----
+El sistema se rige por las siguientes reglas de negocio, delimitadas a partir de la operación actual del área comercial:
 
-## Captura del n de visitantes
+- Existen **cuatro planes base** de internet empresarial (100, 200, 500 y 1000 Mbps), cada uno con un precio mensual estandarizado.
+- La **instalación** tiene un costo único; este se **condona** cuando el cliente firma un contrato de 12 o 24 meses.
+- Los **clientes nuevos** reciben un **10% de descuento** sobre el precio mensual durante el primer semestre.
+- Los clientes con contrato de **24 meses** reciben un **5% adicional** de descuento, el cual se suma al descuento anterior.
+- Sobre la mensualidad ya descontada se aplica el **IVA del 16%**.
+- El **primer pago** está formado por la mensualidad descontada, más su IVA, más el costo de instalación (si aplica).
+- El sistema permite elaborar **múltiples cotizaciones** en una misma sesión y acumula los montos para generar un resumen al final.
 
-El programa solicita al usuario el total de visitantes que pagarán boleto, el cual se convierte a entero para controlar el ciclo `for` que procesa a cada persona.
+## Requisitos funcionales
 
-```python
-num_visitantes = int(input("¿Cuántos visitantes van a pagar boleto? "))
-```
+Para garantizar el funcionamiento básico del sistema de cotización se definen los siguientes requisitos funcionales:
 
----
+1. El sistema debe mostrar el catálogo de planes de internet disponibles con su velocidad y precio mensual.
 
-## Ciclo de procesamiento con break y continue
+2. El sistema debe permitir al usuario elegir un plan de los cuatro disponibles en el catálogo.
 
-Se utiliza un ciclo `for` con `range(num_visitantes)` para recorrer a cada visitante. Dentro del ciclo se capturan la edad, la confirmación de mayoría de edad y el tipo de visitante.
+3. El sistema debe capturar el plazo del contrato, aceptando únicamente las duraciones de 0, 12 o 24 meses.
 
-### Uso de `continue`
+4. El sistema debe identificar si el cliente es nuevo para aplicar el descuento de bienvenida del primer semestre.
 
-Cuando el visitante es menor de 3 años, el boleto es gratis ($0). Se imprime un mensaje y se ejecuta `continue` para saltar al siguiente visitante sin calcular descuento ni cobro.
+5. El sistema debe calcular el descuento total según las reglas de negocio del cliente y el plazo del contrato.
 
-```python
-if edad < 3:
-    print("Menor de 3 años, sin cargo")
-    continue
-```
+6. El sistema debe aplicar la condonación de instalación cuando el contrato sea de 12 o 24 meses.
 
-### Uso de `break`
+7. El sistema debe calcular la mensualidad, el IVA y el primer pago, mostrando el desglose completo en pantalla.
 
-Se valida que la edad coincida con la respuesta de mayoría de edad. Si hay incoherencia (por ejemplo, 20 años y responde "no", o 15 años y responde "si"), se ejecuta `break` para detener el proceso, ya que los datos no son lógicos.
+8. El sistema debe acumular las cotizaciones de la sesión y mostrar un resumen con el total de los primeros pagos y las mensualidades.
 
-```python
-if edad >= 18 and mayor_edad == "no":
-    print("Error: la edad no coincide con la respuesta. Intente de nuevo.")
-    break
+## Requisitos no funcionales
 
-if edad < 18 and mayor_edad == "si":
-    print("Error: la edad no coincide con la respuesta. Intente de nuevo.")
-    break
-```
+Asimismo, el sistema debe cumplir con los siguientes requisitos no funcionales:
+
+1. El sistema debe ser fácil de usar, mediante un menú sencillo y opciones claras en consola.
+
+2. El sistema debe validar los datos ingresados, rechazando planes o plazos de contrato no válidos e indicando el error al usuario.
+
+3. El sistema debe ser eficiente, permitiendo elaborar varias cotizaciones en una misma sesión sin reiniciar el proceso.
+
+4. El sistema debe ser escalable, facilitando la incorporación de nuevos planes, clientes registrados y reportes a futuro.
+
+5. El sistema debe ser de bajo costo de ejecución, corriendo únicamente en consola sin requerir dependencias externas.
 
 ---
 
-## Tabla de descuentos
+## Modelo Entrada-Proceso-Salida (EPS)
 
-La estructura `if/elif/else` nos asegura que **solo se aplique un tipo de descuento por boleto**. Primero se determina el precio base según la edad y luego se evalúa el tipo de visitante para aplicar el descuento correspondiente.
+El sistema sigue el modelo **Entrada-Proceso-Salida**:
 
-```python
-if edad <= 17:
-    precio_base = precio_menor
-else:
-    precio_base = precio_adulto
+- **Entrada:** la opción del menú, el número del plan (1-4), los meses de contrato (0, 12 o 24) y la respuesta de si el cliente es nuevo (s/n).
+- **Proceso:** selección del plan, aplicación de descuentos, condonación de instalación, cálculo de la mensualidad, del IVA y del primer pago, y acumulación de los totales de la sesión.
+- **Salida:** catálogo de planes, detalle de cada cotización y resumen final de la sesión.
 
-descuento = 0
-if tipo_visitante == "adulto mayor":
-    descuento = precio_base * descuento_adulto_mayor
-elif tipo_visitante == "profesor":
-    descuento = precio_base * descuento_profesor
-elif tipo_visitante == "estudiante":
-    descuento = precio_base * descuento_estudiante
-```
+## Clasificación de Datos
 
-De esta forma, si un visitante es adulto mayor, solo recibe el 12% y no se le aplica ningún otro descuento. La estructura con `elif` asegura que solo una condición se cumpla.
+| Variable | Tipo de dato | Descripción |
+| :--- | :--- | :--- |
+| `opcion` | `str` | Opción del menú seleccionada por el usuario. |
+| `clave` | `int` | Número del plan elegido (1 a 4). |
+| `meses` | `int` | Meses de contrato (0, 12 o 24). |
+| `nuevo` | `str` | Respuesta (s/n) de si el cliente es nuevo. |
+| `velocidades` / `precios` | `list` | Catálogo de velocidades en Mbps y precios mensuales. |
+| `costo_instalacion` | `int` | Costo único de instalación en MXN. |
+| `iva` | `float` | Porcentaje de IVA (0.16). |
+| `desc_bienvenida` / `desc_contrato_24` | `float` | Porcentajes de descuento (0.10 y 0.05). |
+| `precio_plan`, `velocidad_plan` | `int` | Precio y velocidad del plan seleccionado. |
+| `descuento` | `float` | Monto total del descuento aplicado. |
+| `mensualidad`, `iva_aplicado`, `primer_pago`, `instalacion` | `float` | Resultados del proceso de cobro. |
+| `num_cotizaciones` | `int` | Contador de cotizaciones realizadas. |
+| `total_primeros_pagos`, `total_mensualidades` | `float` | Acumuladores de montos de la sesión. |
+
+## Operadores del Lenguaje
+
+**Operadores matemáticos:**
+- `*` para calcular el monto del descuento, el IVA y las sumas porcentuales (por ejemplo, `mensualidad * iva`).
+- `-` para restar el descuento del precio base y obtener la mensualidad con descuento.
+- `+` para sumar mensualidad, IVA e instalación, y para acumular los totales de la sesión.
+
+**Operadores relacionales:**
+- `1 <= clave <= 4` para validar que el plan elegido exista dentro del catálogo.
+- `meses == 0 or meses == 12 or meses == 24` para validar el plazo del contrato.
+- `meses >= 12` para definir si la instalación queda condonada.
+- `meses == 24` y `nuevo.lower() == "s"` para decidir qué descuentos se aplican.
+
+**Operadores lógicos:**
+- `or` para permitir varios valores válidos en la validación del plazo del contrato.
+- Se mantiene la estructura `if/elif/else` con condiciones excluyentes para que solo se ejecute el bloque correcto.
+
+## Estructuras de Control
+
+**Estructuras condicionales:**
+- `if/elif/else`: dirigen el menú principal, validan la clave del plan y el plazo del contrato, deciden la condonación de la instalación, aplican los descuentos según el cliente y el plazo, y controlan el switch de las opciones del menú.
+
+**Estructuras iterativas:**
+- `while` (menú principal): mantiene el programa activo hasta que el usuario selecciona la opción de salir.
+- `while` de validación: solicita repetidamente el plan o el plazo del contrato hasta que el valor ingresado sea válido.
+- `for` con `range`: recorre la lista del catálogo para mostrar los planes disponibles en pantalla.
 
 ---
 
-## Print general
+## Documentación del diseño
 
-Por cada visitante se muestra el desglose: precio base, monto de descuento y total a pagar. Al finalizar, el ciclo se imprime el total general acumulado.
+El diseño del sistema de cotización se realizó con el objetivo de mantener una estructura clara y alineada al proceso real del área comercial de IENTC, siendo fácil de comprender y de ampliar en fases posteriores.
 
-```python
-precio_final = precio_base - descuento
-total_general += precio_final
+Se definieron **constantes** para los valores estandarizados del negocio (precios de los planes, costo de instalación, IVA y porcentajes de descuento), lo que centraliza las tarifas y permite modificarlas sin alterar el resto del programa. El catálogo se representó con dos **listas paralelas** que almacenan la velocidad y el precio de cada plan, las cuales se recorren con el ciclo `for` para mostrarlas en pantalla.
 
-print(f"Precio base:    ${precio_base:.2f}")
-print(f"Descuento:     -${descuento:.2f}")
-print(f"Total a pagar:  ${precio_final:.2f}")
-```
+La lógica central se divide en tres momentos que corresponden al modelo EPS: la captura de entradas con **validación mediante ciclos `while`** (plan y plazo de contrato), el **proceso de cálculo** con estructuras `if/elif/else` que garantizan que los descuentos se apliquen en el orden correcto y de forma excluyente, y la **salida** del detalle de la cotización. Finalmente, los **acumuladores** de la sesión permiten generar un resumen que apoya la proyección de ventas del área comercial.
 
-```python
-print("\n----- Resumen de la cuenta -----")
-print(f"Visitantes: {num_visitantes}")
-print(f"Total a pagar: ${total_general:.2f}")
-```
+El uso de confirmaciones excluyentes (`if` para cliente nuevo, `if` para contrato de 24 meses) evita cálculos dobles y mantiene la coherencia de las reglas de negocio, de manera similar a como se controlan descuentos únicos por boleto en actividades anteriores.
 
-## Salidas esperadas 
+## Conclusión
 
-Para probar la funcionalidad del programa, se hizo la prueba con 5 visitantes, verificando cada uno de los tipos de descuento
+En este avance se presentó el análisis y diseño de un sistema de **cotización de planes de internet empresarial** para IENTC Telecomunicaciones, identificando el problema del área comercial, delimitando las reglas de negocio, y definiendo los requerimientos funcionales y no funcionales, la clasificación de datos, los operadores y las estructuras de control necesarios. La aplicación del modelo Entrada-Proceso-Salida y del prototipo en Python permitió representar de manera clara el funcionamiento del sistema antes de su etapa final. Este diseño servirá como base para ampliar la solución en fases posteriores del proyecto.
 
-### Salida general
-
-![imagen1](ss/cap1_2.png)
-
-También, para comprobar el uso de `break` se hizo la prueba con contradicciones de edades
-
-En la siguiente imagen de salida se muestra un ejemplo de contradicción de edades, donde el usuario determina el valor del visitante con **67** y su respuesta es que **el visitante es menor de edad** 
-
-![imagen1](ss/cap2_2.png)
-
-
-Ahora se muestra una salida donde es inverso; el usuario determina el valor **12** y su respuesta es que **el visitante es mayor de edad**
-
-![imagen1](ss/cap3_2.png)
 ---
 
-# Ejercicios Extras 
+## Prototipo de código
 
-## Extra 1: Control de aforo con break y continue (while)
+El prototipo funcional se encuentra en el archivo `semana-3/avance-proyecto/prototipo_inicial.py`. A continuación se documenta su lógica por bloques.
 
-utiliza un ciclo `while` infinito que acumule el costo de los boletos. Si el boleto es gratis ($0), se imprime un mensaje y se ejecuta `continue` para saltar al siguiente visitante. Si el acumulador supera o iguala $100, se ejecuta `break` para detener el ciclo.
+### Constantes y catálogo de planes
+
+Se declaran las tarifas y porcentajes estandarizados del negocio, así como el catálogo de planes mediante listas paralelas:
 
 ```python
-total_acumulado = 0
-numero_boleto = 1
+costo_instalacion = 1500
+iva = 0.16
+desc_bienvenida = 0.10
+desc_contrato_24 = 0.05
+
+velocidades = [100, 200, 500, 1000]
+precios = [849, 1299, 2499, 3999]
+```
+
+### Acumuladores de la sesión
+
+Los contadores y acumuladores inician en cero y se van actualizando con cada cotización:
+
+```python
+total_primeros_pagos = 0
+total_mensualidades = 0
+num_cotizaciones = 0
+```
+
+### Menú principal con ciclo `while`
+
+El menú se mantiene activo hasta que el usuario elige la opción de salida. Dentro del menú, el ciclo `for` recorre el catálogo para mostrarlo en pantalla:
+
+```python
+while True:
+    print("\n===== IENTC - COTIZADOR DE INTERNET EMPRESARIAL =====")
+    print("1. Ver catálogo de planes")
+    print("2. Realizar una cotización")
+    print("3. Ver resumen de cotizaciones")
+    print("4. Salir")
+    opcion = input("Selecciona una opción: ")
+```
+
+### Validación de entradas con `while`
+
+El plan y el plazo del contrato se piden en ciclos de validación; si el valor no es válido, el ciclo se repite:
+
+```python
+while True:
+    clave = int(input("Elige el plan (1-4): "))
+    if 1 <= clave <= 4:
+        break
+    print("Error: plan no válido, intenta de nuevo.")
 
 while True:
-    costo = int(input(f"Costo del boleto {numero_boleto}: "))
+    meses = int(input("Meses de contrato (0, 12 o 24): "))
+    if meses == 0 or meses == 12 or meses == 24:
+        break
+    print("Error: solo se aceptan contratos de 0, 12 o 24 meses.")
+```
 
-    if costo == 0:
-        print("Menor de 3 años, sin cargo")
-        numero_boleto += 1
-        continue
+### Cálculo de descuentos, instalación y IVA
 
-    total_acumulado += costo
-    print(f"Boleto {numero_boleto} ${costo} registrado. Acumulado: ${total_acumulado}")
-    numero_boleto += 1
+Las estructuras condicionales aplican los descuentos de forma independiente y acumulable: un cliente nuevo recibe el 10%, y un contrato de 24 meses añade el 5%. La instalación se condona cuando el contrato alcanza 12 o más meses:
 
-    if total_acumulado >= 100:
-        print("Cuota alcanzada, se detendrá el registro")
+```python
+descuento = 0
+if nuevo.lower() == "s":
+    descuento = precio_plan * desc_bienvenida
+
+if meses == 24:
+    descuento = descuento + precio_plan * desc_contrato_24
+
+instalacion = costo_instalacion
+if meses >= 12:
+    instalacion = 0
+
+mensualidad = precio_plan - descuento
+iva_aplicado = mensualidad * iva
+primer_pago = mensualidad + iva_aplicado + instalacion
+```
+
+### Salida del detalle y acumulación
+
+Cada cotización muestra su desglose completo y actualiza los acumuladores de la sesión:
+
+```python
+print("---------- DETALLE DE LA COTIZACIÓN ----------")
+print(f"Plan seleccionado:     {velocidad_plan} Mbps")
+print(f"Precio base mensual:  ${precio_plan}")
+print(f"Descuento:           -${descuento:.2f}")
+print(f"Mensualidad:          ${mensualidad:.2f}")
+print(f"IVA (16%):            ${iva_aplicado:.2f}")
+print(f"Instalación:          ${instalacion:.2f}")
+print(f"Primer pago total:    ${primer_pago:.2f}")
+
+total_primeros_pagos += primer_pago
+total_mensualidades += mensualidad
+num_cotizaciones += 1
+```
+
+### Depuración con PDB (Tema 7)
+
+Durante el desarrollo se depuró con **PDB** un error lógico en el orden de cálculo del IVA. En una versión previa, el IVA se calculaba sobre el **precio base sin descuento**, por lo que el cargo fiscal resultaba mayor al real. Con `import pdb; pdb.set_trace()` se inspeccionaron los valores de `precio_plan`, `descuento` y `mensualidad`, confirmando que el IVA debe calcularse sobre la **mensualidad ya descontada**:
+
+```python
+mensualidad = precio_plan - descuento   # primero el descuento
+iva_aplicado = mensualidad * iva        # después el IVA
+```
+
+### Código completo
+
+```python
+# ============================================================
+# Prototipo inicial: Sistema de Cotización de Planes de
+# Internet Empresarial  -  IENTC Telecomunicaciones
+# Avance del Proyecto (Fase I)  -  Actividad 3
+# ============================================================
+
+# ------------------------------------------------------------
+# Constantes: precios estandarizados y porcentajes del negocio
+# ------------------------------------------------------------
+costo_instalacion = 1500    # costo único de instalación (MXN)
+iva = 0.16                  # IVA del 16%
+desc_bienvenida = 0.10      # 10% el primer semestre (clientes nuevos)
+desc_contrato_24 = 0.05     # 5% adicional por contrato de 24 meses
+
+# Planes disponibles: velocidad (Mbps) y precio mensual (MXN)
+velocidades = [100, 200, 500, 1000]
+precios = [849, 1299, 2499, 3999]
+
+# ------------------------------------------------------------
+# Acumuladores de la sesión de cotizaciones
+# ------------------------------------------------------------
+total_primeros_pagos = 0
+total_mensualidades = 0
+num_cotizaciones = 0
+
+# ------------------------------------------------------------
+# Menú principal: estructura de repetición while
+# ------------------------------------------------------------
+while True:
+    print("\n===== IENTC - COTIZADOR DE INTERNET EMPRESARIAL =====")
+    print("1. Ver catálogo de planes")
+    print("2. Realizar una cotización")
+    print("3. Ver resumen de cotizaciones")
+    print("4. Salir")
+    opcion = input("Selecciona una opción: ")
+
+    if opcion == "1":
+        # Recorrido del catálogo con el ciclo for
+        print("\n--- Catálogo de planes IENTC ---")
+        for i in range(len(velocidades)):
+            print(f"  {i + 1}.- {velocidades[i]} Mbps  -  ${precios[i]} / mes")
+
+    elif opcion == "2":
+        # --- ENTRADA: selección del plan ---
+        print("\n--- Nueva cotización ---")
+        for i in range(len(velocidades)):
+            print(f"  {i + 1}. {velocidades[i]} Mbps  -  ${precios[i]} / mes")
+
+        while True:
+            clave = int(input("Elige el plan (1-4): "))
+            if 1 <= clave <= 4:
+                break
+            print("Error: plan no válido, intenta de nuevo.")
+
+        indice = clave - 1
+        velocidad_plan = velocidades[indice]
+        precio_plan = precios[indice]
+
+        # --- ENTRADA: plazo del contrato ---
+        while True:
+            meses = int(input("Meses de contrato (0, 12 o 24): "))
+            if meses == 0 or meses == 12 or meses == 24:
+                break
+            print("Error: solo se aceptan contratos de 0, 12 o 24 meses.")
+
+        # --- ENTRADA: si el cliente es nuevo ---
+        nuevo = input("¿Es cliente nuevo? (s/n): ")
+
+        # --- PROCESO: cálculo de descuentos ---
+        descuento = 0
+        if nuevo.lower() == "s":
+            descuento = precio_plan * desc_bienvenida
+
+        if meses == 24:
+            descuento = descuento + precio_plan * desc_contrato_24
+
+        # --- PROCESO: costo de instalación (condonación) ---
+        instalacion = costo_instalacion
+        if meses >= 12:
+            instalacion = 0
+
+        # --- PROCESO: mensualidad, IVA y primer pago ---
+        mensualidad = precio_plan - descuento
+        iva_aplicado = mensualidad * iva
+        primer_pago = mensualidad + iva_aplicado + instalacion
+
+        # --- SALIDA: detalle de la cotización ---
+        print("\n---------- DETALLE DE LA COTIZACIÓN ----------")
+        print(f"Plan seleccionado:     {velocidad_plan} Mbps")
+        print(f"Precio base mensual:  ${precio_plan}")
+        print(f"Descuento:           -${descuento:.2f}")
+        print(f"Mensualidad:          ${mensualidad:.2f}")
+        print(f"IVA (16%):            ${iva_aplicado:.2f}")
+        print(f"Instalación:          ${instalacion:.2f}")
+        print(f"Primer pago total:    ${primer_pago:.2f}")
+        if meses > 0:
+            print(f"Contrato firmado:     {meses} meses")
+
+        # --- Acumuladores de la sesión ---
+        total_primeros_pagos += primer_pago
+        total_mensualidades += mensualidad
+        num_cotizaciones += 1
+
+    elif opcion == "3":
+        # Reporte de la sesión con los acumuladores
+        print("\n---------- RESUMEN DE LA SESIÓN ----------")
+        print(f"Cotizaciones realizadas:  {num_cotizaciones}")
+        print(f"Total de primeros pagos:  ${total_primeros_pagos:.2f}")
+        print(f"Suma de mensualidades:    ${total_mensualidades:.2f}")
+
+    elif opcion == "4":
+        print("Gracias por usar el cotizador de IENTC. ¡Hasta luego!")
         break
 
-print(f"Total acumulado: ${total_acumulado:.2f}")
+    else:
+        print("Opción no válida, intenta de nuevo.")
 ```
-
-![imagen1](ss/cap1.png)
-
----
-
-## Extra 2: Estadística de visitantes con for
-
-Pide el número total de visitantes y utiliza un ciclo `for` con `range` para capturar la edad de cada uno. Utiliza un acumulador para contar adultos (>=18 años) y otro para sumar las edades, calculando el promedio al final.
-
-```python
-num_visitantes = int(input("Número de visitantes: "))
-
-total_adultos = 0
-suma_edades = 0
-
-for i in range(num_visitantes):
-    edad = int(input(f"Edad del visitante {i + 1}: "))
-    suma_edades += edad
-    if edad >= 18:
-        total_adultos += 1
-
-promedio = suma_edades / num_visitantes
-
-print(f"Adultos: {total_adultos}")
-print(f"Promedio de edad: {promedio:.2f}")
-```
-
-![imagen1](ss/cap2.png)
-
----
-
-## Extra 3: Depuración de un cobro con PDB
-
-El código original asigna `descuento = 12` (un entero), pero el descuento debe ser un porcentaje (0.12). Al restar `precio - 12` se obtiene 33 en vez de 39.60. Se identifica el error usando `pdb.set_trace()` para inspeccionar las variables y luego se corrige.
-
-```python
-import pdb
-
-precio = 45
-descuento = 12  # error aquí: debe ser el porcentaje 0.12, no el entero 12
-total = precio - descuento
-print(f"Total (con error): ${total:.2f}")
-
-print("Error lógico: el descuento debe ser en porcentaje 0.12, no 12.")
-
-descuento_corregido = precio * 0.12
-total_corregido = precio - descuento_corregido
-print(f"Código corregido: descuento = precio * 0.12 -> Total: ${total_corregido:.2f}")
-```
-
-![imagen1](ss/cap3.png)
-
----
-
-## Extra 4: Pirámide de asteriscos con for
-
- Se pide la altura de la pirámide. Con un ciclo `for` externo se controlan las filas (de 1 a altura). Con un ciclo `for` interno imprimen los asteriscos de cada fila usando `end=""` para evitar salto de línea, y luego se imprime una línea vacía para avanzar de fila.
-
-
-```python
-altura = int(input("Altura de la pirámide: "))
-
-for fila in range(1, altura + 1):
-    for col in range(fila):
-        print("*", end="")
-    print()
-```
-
-![imagen1](ss/cap4.png)
